@@ -1,0 +1,346 @@
+#!/usr/bin/env python3
+"""Joue l'animation du terminal choisie dans Studio (onglet Terminal), avec des infos système à côté.
+Les animations elles-mêmes sont dans ~/.local/share/studio/animations.py.
+
+  forsaken-banner                    en boucle, dans le panneau du haut de kitty (forsaken.session) ;
+                                     se ferme tout seul quand il n'y a plus d'autre fenêtre dans ce kitty
+  forsaken-banner --mode lancement   joue quelques secondes dans le shell puis s'arrête (une touche la coupe)
+  forsaken-banner --mode fixe        une image fixe, sans animation
+"""
+import argparse
+import locale
+import os
+import random
+import re
+import select
+import shutil
+import signal
+import sys
+import termios
+import time
+import tty
+
+TERM_ZSH = os.path.expanduser("~/.config/studio/term.zsh")
+STUDIO_JSON = os.path.expanduser("~/.config/studio/studio.json")
+INFO_TEXT = "#9b979d"
+FPS = 20
+
+
+def fg(h):
+    h = h.lstrip("#")
+    return "\x1b[38;2;%d;%d;%dm" % tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def studio_colors():
+    c = {"accent": "#f472b6", "accent2": "#a78bfa"}
+    try:
+        text = open(TERM_ZSH).read()
+    except OSError:
+        return c
+    for var, key in (("ST_ACCENT", "accent"), ("ST_ACCENT2", "accent2")):
+        m = re.search(r"^%s='(#[0-9a-fA-F]{6})'" % var, text, re.M)
+        if m:
+            c[key] = m.group(1)
+    return c
+
+
+# ---------------------------------------------------------------- réglages (Studio)
+STUDIO = os.path.expanduser("~/.local/share/studio")
+sys.path.insert(0, STUDIO)
+try:
+    import core
+    from i18n import locale_name, tr
+except Exception:                                     # Studio absent : réglages par défaut, en français
+    core = None
+
+    def tr(text, **kw):
+        return text.format(**kw) if kw else text
+
+    def locale_name():
+        return "fr_FR.UTF-8"
+import animations  # noqa: E402  (dans le dossier de Studio)
+
+
+def settings():
+    if core:
+        try:
+            return core.load()["term"]
+        except Exception:
+            pass
+    return {"anim": "toile", "mode": "boucle", "panel": 30, "speed": 1.0, "size": 1.0,
+            "info": {"os": True, "uptime": True, "ram": True, "disk": True, "date": True}}
+
+
+INFO_ORDER = ["os", "host", "kernel", "uptime", "packages", "cpu", "ram", "disk", "shell", "date"]
+ICONS = {"os": "", "host": "\U000F0004", "kernel": "\U000F0493", "uptime": "\U000F0954",
+         "packages": "\U000F03D6", "cpu": "\U000F035B", "ram": "\U000F061A", "disk": "\U000F02CA",
+         "shell": "\U000F018D", "date": "\U000F00ED"}
+_cpu_prev = None
+
+
+def _cpu_percent():
+    global _cpu_prev
+    def sample():
+        v = [int(x) for x in open("/proc/stat").readline().split()[1:]]
+        return sum(v), v[3] + v[4]
+    if _cpu_prev is None:
+        _cpu_prev = sample()
+        time.sleep(0.05)
+    tot, idle = sample()
+    dt, di = tot - _cpu_prev[0], idle - _cpu_prev[1]
+    _cpu_prev = (tot, idle)
+    return 0 if dt <= 0 else round(100 * (dt - di) / dt)
+
+
+def sys_info(wanted):
+    out = []
+    for key in INFO_ORDER:
+        if not wanted.get(key):
+            continue
+        try:
+            if key == "os":
+                m = re.search(r'^PRETTY_NAME="?([^"\n]+)', open("/etc/os-release").read(), re.M)
+                text = m.group(1) if m else "Linux"
+            elif key == "host":
+                text = "%s@%s" % (os.environ.get("USER", "?"), os.uname().nodename)
+            elif key == "kernel":
+                text = tr("noyau {v}", v=os.uname().release)
+            elif key == "uptime":
+                up = int(float(open("/proc/uptime").read().split()[0]) // 60)
+                text = tr("allumé depuis {h} h {m}", h=up // 60, m="%02d" % (up % 60))
+            elif key == "packages":
+                d = "/var/lib/pacman/local"
+                text = tr("{n} paquets", n=sum(1 for e in os.scandir(d) if e.is_dir())) if os.path.isdir(d) else ""
+            elif key == "cpu":
+                text = tr("processeur {p} %", p=_cpu_percent())
+            elif key == "ram":
+                mem = dict(l.split(":", 1) for l in open("/proc/meminfo"))
+                total = int(mem["MemTotal"].split()[0]) / 1048576
+                used = total - int(mem["MemAvailable"].split()[0]) / 1048576
+                text = tr("RAM {u} / {t} Go", u="%.1f" % used, t="%.0f" % total)
+            elif key == "disk":
+                st = os.statvfs("/")
+                text = tr("disque {p} %", p=100 - round(100 * st.f_bavail / st.f_blocks))
+            elif key == "shell":
+                text = os.path.basename(os.environ.get("SHELL", "sh"))
+            else:
+                text = time.strftime("%a %d %b, %H:%M")
+        except (OSError, ValueError, KeyError):
+            continue
+        if text:
+            out.append((ICONS[key], text))
+    return out
+
+
+# ---------------------------------------------------------------- rendu
+LEFT, GAP = 2, 5
+
+
+LAST = os.path.expanduser("~/.cache/studio/derniere-animation")
+
+
+def pick_anim(cfg, avoid=None):
+    """L'animation à jouer. En aléatoire : tirée parmi celles cochées dans Studio, jamais deux fois de suite."""
+    key = cfg.get("anim")
+    if key != "aleatoire":
+        return key if key in animations.ANIMS else "toile"
+    pool = [k for k in animations.ANIMS if cfg.get("random", {}).get(k, True)] or list(animations.ANIMS)
+    try:
+        last = open(LAST).read().strip()
+    except OSError:
+        last = None
+    key = random.choice([k for k in pool if k not in (last, avoid)] or pool)
+    try:
+        os.makedirs(os.path.dirname(LAST), exist_ok=True)
+        with open(LAST, "w") as f:
+            f.write(key)
+    except OSError:
+        pass
+    return key
+
+
+def make_scene(cfg, key, cols, rows, info):
+    """Crée l'animation, à la place qui reste une fois les infos posées à droite."""
+    cls = animations.ANIMS[key][0]
+    info_w = max((len(t) + 3 for _, t in info), default=0)
+    art = cols - LEFT - 1 - (GAP + info_w if info else 0)
+    if info and art < 24:                              # trop étroit : pas d'infos
+        art = cols - LEFT - 1
+    return cls(max(8, art), max(4, rows), float(cfg.get("size", 1.0)), cfg.get("opts", {}).get(key))
+
+
+def render(scene, colors, info, cols, rows):
+    cells = scene.cells(colors)
+    info_x = LEFT + scene.width + GAP
+    show_info = info and cols - info_x >= max(len(t) + 3 for _, t in info)
+    top = max(0, (rows - len(info)) // 2)
+    lines = []
+    for y in range(rows):
+        buf, fgc, bgc = " " * LEFT, None, None
+        for x in range(min(scene.width, cols - LEFT)):
+            c = cells.get((x, y))
+            ch, col, bg = (c[0], c[1], c[2] if len(c) > 2 else None) if c else (" ", None, None)
+            if bg != bgc:
+                buf += ("\x1b[48;2;%d;%d;%dm" % animations.rgb(bg)) if bg else "\x1b[49m"
+                bgc = bg
+            if col and col != fgc:
+                buf += fg(col)
+                fgc = col
+            buf += ch
+        if bgc:
+            buf += "\x1b[49m"
+        i = y - top
+        if show_info and 0 <= i < len(info):
+            icon, text = info[i]
+            buf += " " * (info_x - LEFT - scene.width) + fg(colors["accent"]) + icon + "  " + fg(INFO_TEXT) + text
+        lines.append(buf + "\x1b[0m")
+    return lines
+
+
+# ---------------------------------------------------------------- fermeture automatique (mode boucle)
+def has_sibling_window():
+    """Vrai s'il reste une autre fenêtre dans ce kitty (sinon on ferme le panneau)."""
+    kpid, wid = os.environ.get("KITTY_PID"), os.environ.get("KITTY_WINDOW_ID")
+    if not kpid:
+        return True
+    want = ("KITTY_PID=%s" % kpid).encode()
+    for pid in os.listdir("/proc"):
+        if not pid.isdigit() or int(pid) == os.getpid():
+            continue
+        try:
+            env = open("/proc/%s/environ" % pid, "rb").read().split(b"\0")
+        except OSError:
+            continue
+        if want in env and ("KITTY_WINDOW_ID=%s" % wid).encode() not in env:
+            return True
+    return False
+
+
+# ---------------------------------------------------------------- modes
+def run_loop(cfg):
+    """Panneau du haut : animation sans fin, sur un écran à part."""
+    out = sys.stdout
+    fd = sys.stdin.fileno()
+    saved = termios.tcgetattr(fd)
+    resized = [True]
+    signal.signal(signal.SIGWINCH, lambda *_: resized.__setitem__(0, True))
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    signal.signal(signal.SIGHUP, lambda *_: sys.exit(0))
+    out.write("\x1b[?1049h\x1b[?25l\x1b[?7l")       # écran à part, sans curseur, sans retour à la ligne
+    try:
+        tty.setcbreak(fd)
+        attrs = termios.tcgetattr(fd)
+        attrs[3] &= ~termios.ECHO
+        termios.tcsetattr(fd, termios.TCSANOW, attrs)
+        colors, info, scene = studio_colors(), sys_info(cfg.get("info", {})), None
+        colors_mtime, info_t, check_t = None, time.monotonic(), 0.0
+        key, switch_t = pick_anim(cfg), time.monotonic()
+        started, seen_sibling = time.monotonic(), False
+        prev, last = [], time.monotonic()
+        while True:
+            now = time.monotonic()
+            if resized[0]:
+                resized[0] = False
+                cols, rows = shutil.get_terminal_size((80, 12))
+                if scene and hasattr(scene, "close"):
+                    scene.close()
+                scene, prev = make_scene(cfg, key, cols, rows, info), []
+                out.write("\x1b[2J")
+            if now - check_t > 1.5:
+                check_t = now
+                try:                                   # Studio a changé de thème ou de réglages ?
+                    m = (os.path.getmtime(TERM_ZSH), os.path.getmtime(STUDIO_JSON))
+                    if m != colors_mtime:
+                        colors_mtime, colors, prev = m, studio_colors(), []
+                        new = settings()
+                        if new != cfg:
+                            if new.get("anim") != cfg.get("anim") or new.get("random") != cfg.get("random"):
+                                key, switch_t = pick_anim(new), now
+                            cfg, resized[0] = new, True
+                            info = sys_info(cfg.get("info", {}))
+                            if new.get("mode") != "boucle":
+                                break
+                except OSError:
+                    pass
+                if has_sibling_window():
+                    seen_sibling = True
+                elif seen_sibling or now - started > 15:
+                    break
+            every = float(cfg.get("random_every", 0) or 0)
+            if cfg.get("anim") == "aleatoire" and every and now - switch_t > every * 60:
+                key, switch_t, resized[0] = pick_anim(cfg, avoid=key), now, True   # au suivant
+            if now - info_t > 5:
+                info_t, info, prev = now, sys_info(cfg.get("info", {})), []
+            scene.step(min(0.1, now - last) * float(cfg.get("speed", 1.0)))
+            last = now
+            lines = render(scene, colors, info, cols, rows)
+            out.write("".join("\x1b[%d;1H\x1b[2K%s" % (y + 1, l) for y, l in enumerate(lines)
+                              if y >= len(prev) or prev[y] != l))
+            out.flush()
+            prev = lines
+            if select.select([fd], [], [], 1 / max(5, int(cfg.get("fps", FPS))))[0]:
+                os.read(fd, 1024)                          # on ignore ce qui est tapé dans le panneau
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if scene and hasattr(scene, "close"):
+            scene.close()
+        termios.tcsetattr(fd, termios.TCSANOW, saved)
+        out.write("\x1b[?7h\x1b[?25h\x1b[?1049l")
+        out.flush()
+
+
+def run_inline(cfg, animate, rows=12, duration=4.0):
+    """Dans le shell, au-dessus du prompt : joue quelques secondes (ou rien) puis laisse l'image."""
+    out = sys.stdout
+    cols = shutil.get_terminal_size((80, 24)).columns
+    colors, info = studio_colors(), sys_info(cfg.get("info", {}))
+    scene = make_scene(cfg, pick_anim(cfg), cols, rows, info)
+    if not (animate and out.isatty() and sys.stdin.isatty()):
+        for _ in range(30):                             # image fixe : on laisse l'animation s'installer un peu
+            scene.step(0.1)
+        out.write("\n".join(render(scene, colors, info, cols, rows)) + "\n")
+        if hasattr(scene, "close"):
+            scene.close()
+        return
+    fd = sys.stdin.fileno()
+    saved = termios.tcgetattr(fd)
+    out.write("\x1b[?25l" + "\n" * rows)
+    try:
+        tty.setcbreak(fd, termios.TCSANOW)
+        start = last = time.monotonic()
+        while True:
+            now = time.monotonic()
+            scene.step(min(0.1, now - last) * float(cfg.get("speed", 1.0)))
+            last = now
+            out.write("\x1b[%dA\r" % rows + "".join("\x1b[2K" + l + "\n" for l in render(scene, colors, info, cols, rows)))
+            out.flush()
+            if now - start > duration or select.select([fd], [], [], 1 / max(5, int(cfg.get("fps", FPS))))[0]:
+                break                                       # une touche : on s'arrête là (elle reste pour le shell)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if hasattr(scene, "close"):
+            scene.close()
+        termios.tcsetattr(fd, termios.TCSANOW, saved)       # TCSANOW : ne vide pas ce qui a été tapé
+        out.write("\x1b[?25h")
+        out.flush()
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--mode", choices=["boucle", "lancement", "fixe"], default="boucle")
+    mode = ap.parse_args().mode
+    try:
+        locale.setlocale(locale.LC_TIME, locale_name())    # date dans la langue choisie dans Studio
+    except locale.Error:
+        pass
+    cfg = settings()
+    if mode == "boucle":
+        run_loop(cfg)
+    else:
+        run_inline(cfg, animate=mode == "lancement")
+
+
+if __name__ == "__main__":
+    main()

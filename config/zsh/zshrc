@@ -1,0 +1,142 @@
+# ─────────────────────────────────────────────────────────────
+#  zsh — Forsaken
+#  Couleurs et bannière générées par Studio (~/.config/studio/)
+# ─────────────────────────────────────────────────────────────
+
+# ---- Historique ----
+HISTFILE=~/.zsh_history
+HISTSIZE=50000
+SAVEHIST=50000
+setopt SHARE_HISTORY HIST_IGNORE_ALL_DUPS HIST_IGNORE_SPACE HIST_REDUCE_BLANKS EXTENDED_HISTORY
+setopt AUTO_CD AUTO_PUSHD PUSHD_IGNORE_DUPS PUSHD_SILENT INTERACTIVE_COMMENTS NO_BEEP
+
+# ---- Couleurs du thème Studio ----
+[[ -r ~/.config/studio/term.zsh ]] && source ~/.config/studio/term.zsh
+: ${ST_ACCENT:=#8b7cf6} ${ST_ACCENT2:=#d08bf7} ${ST_TEXT:=#eeedf5} ${ST_TEXT2:=#9897a0}
+: ${ST_TEXT3:=#62606a} ${ST_DANGER:=#f0606f} ${ST_OK:=#4ade80} ${ST_WARN:=#fbbf24}
+
+# ---- Complétion ----
+autoload -Uz compinit bashcompinit
+compinit -d ~/.cache/zcompdump
+bashcompinit
+zmodload zsh/complist
+zstyle ':completion:*' menu select                                   # menu navigable aux flèches
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'  # insensible à la casse, partiel
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*:descriptions' format "%F{$ST_ACCENT}%B── %d ──%b%f"
+zstyle ':completion:*:warnings' format "%F{$ST_DANGER}${ST_NORESULT:-aucun résultat}%f"
+zstyle ':completion:*' squeeze-slashes true
+zstyle ':completion:*' use-cache on
+zstyle ':completion:*' cache-path ~/.cache/zsh
+zstyle ':completion:*:*:kill:*' menu yes select
+zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,%mem,cmd'
+bindkey -M menuselect '^[[Z' reverse-menu-complete                  # Maj+Tab = remonter
+
+# ---- Touches ----
+bindkey -e
+bindkey '^[[1;5C' forward-word       '^[[1;5D' backward-word         # Ctrl+flèches
+bindkey '^[[H' beginning-of-line     '^[[F' end-of-line
+bindkey '^[[1~' beginning-of-line    '^[[4~' end-of-line
+bindkey '^[[3~' delete-char          '^H' backward-kill-word          # Ctrl+Retour efface un mot
+bindkey '^[[3;5~' kill-word
+
+# ---- Plugins (ordre important : coloration avant la recherche dans l'historique) ----
+P=/usr/share/zsh/plugins
+[[ -r $P/zsh-autosuggestions/zsh-autosuggestions.zsh ]] && source $P/zsh-autosuggestions/zsh-autosuggestions.zsh
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+bindkey '^ ' autosuggest-accept                                      # Ctrl+Espace accepte la suggestion
+if [[ -r $P/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
+  source $P/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+  typeset -A ZSH_HIGHLIGHT_STYLES
+  ZSH_HIGHLIGHT_STYLES[command]="fg=$ST_ACCENT"
+  ZSH_HIGHLIGHT_STYLES[builtin]="fg=$ST_ACCENT"
+  ZSH_HIGHLIGHT_STYLES[alias]="fg=$ST_ACCENT"
+  ZSH_HIGHLIGHT_STYLES[function]="fg=$ST_ACCENT"
+  ZSH_HIGHLIGHT_STYLES[precommand]="fg=$ST_ACCENT2,italic"
+  ZSH_HIGHLIGHT_STYLES[unknown-token]="fg=$ST_DANGER"
+  ZSH_HIGHLIGHT_STYLES[path]="fg=$ST_TEXT,underline"
+  ZSH_HIGHLIGHT_STYLES[single-quoted-argument]="fg=$ST_ACCENT2"
+  ZSH_HIGHLIGHT_STYLES[double-quoted-argument]="fg=$ST_ACCENT2"
+  ZSH_HIGHLIGHT_STYLES[comment]="fg=$ST_TEXT3,italic"
+fi
+if [[ -r $P/zsh-history-substring-search/zsh-history-substring-search.zsh ]]; then
+  source $P/zsh-history-substring-search/zsh-history-substring-search.zsh
+  bindkey '^[[A' history-substring-search-up                         # ↑ : commandes qui contiennent ce qui est tapé
+  bindkey '^[[B' history-substring-search-down
+  HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND="bg=$ST_ACCENT,fg=black"
+fi
+unset P
+
+# ---- Outils ----
+[[ -r ~/.bash_aliases ]] && source ~/.bash_aliases
+command -v zoxide >/dev/null && eval "$(zoxide init zsh)"           # z <dossier> : saute aux dossiers fréquents
+export PATH="$HOME/.local/bin:$PATH"
+
+# ---- Prompt ----
+# starship si installé (config : ~/.config/starship.toml), sinon le prompt maison ci-dessous
+autoload -Uz add-zsh-hook
+if command -v starship >/dev/null; then
+  # ~/.config/starship.toml est un modèle : on y met les couleurs de Studio, et on refait le fichier
+  # (et on recharge term.zsh) dès que Studio change de thème, même dans un terminal déjà ouvert
+  export STARSHIP_CONFIG=~/.cache/starship.toml
+  _fk_starship_conf() {
+    [[ -r ~/.config/studio/term.zsh ]] && source ~/.config/studio/term.zsh
+    sed -e "s/@ACCENT@/$ST_ACCENT/g" -e "s/@ACCENT2@/$ST_ACCENT2/g" -e "s/@TEXT3@/$ST_TEXT3/g" \
+        -e "s/@DANGER@/$ST_DANGER/g" -e "s/@WARN@/$ST_WARN/g" -e "s/@IN@/${ST_IN:-dans}/g" \
+        ~/.config/starship.toml >| $STARSHIP_CONFIG
+  }
+  _fk_title() {
+    print -Pn "\e]0;%~\a"   # titre de la fenêtre = dossier courant
+    [[ ! -e $STARSHIP_CONFIG || ~/.config/starship.toml -nt $STARSHIP_CONFIG || ~/.config/studio/term.zsh -nt $STARSHIP_CONFIG ]] && _fk_starship_conf
+  }
+  _fk_title
+  add-zsh-hook precmd _fk_title
+  eval "$(starship init zsh)"
+else
+autoload -Uz vcs_info
+zstyle ':vcs_info:*' enable git
+zstyle ':vcs_info:git:*' check-for-changes true
+zstyle ':vcs_info:git:*' unstagedstr '●'
+zstyle ':vcs_info:git:*' stagedstr '+'
+zstyle ':vcs_info:git:*' formats '%b %u%c'
+zstyle ':vcs_info:git:*' actionformats '%b|%a %u%c'
+
+typeset -g _fk_start
+_fk_preexec() { _fk_start=$EPOCHREALTIME }
+_fk_precmd() {
+  local code=$?
+  vcs_info
+  local dur=""
+  if [[ -n $_fk_start ]]; then
+    local s=$(( EPOCHREALTIME - _fk_start ))
+    (( s >= 3 )) && dur=$(printf ' %%F{%s}%s %ds%%f' $ST_TEXT3 $'\U000F0954' ${s%.*})
+    _fk_start=""
+  fi
+  local frame="%F{$ST_TEXT3}"
+  local git=""
+  [[ -n ${vcs_info_msg_0_} ]] && git=" %F{$ST_ACCENT2}"$'\U000F062C'" ${vcs_info_msg_0_% }%f"
+  local venv=""
+  [[ -n $VIRTUAL_ENV ]] && venv=" %F{$ST_WARN}"$'\U000F0320'" ${VIRTUAL_ENV:t}%f"
+  local host=""
+  [[ -n $SSH_CONNECTION ]] && host="%F{$ST_WARN}%m%f "
+  local arrow="%F{$ST_ACCENT}❯%f"
+  (( code )) && arrow="%F{$ST_DANGER}✘ $code ❯%f"
+  local who="%F{$ST_ACCENT2}"$'\U000F08C7'" %n%f %F{$ST_TEXT3}${ST_IN:-dans}%f "
+  PROMPT="${frame}╭─%f ${who}${host}%B%F{$ST_ACCENT}%~%f%b${git}${venv}${dur}
+${frame}╰─%f${arrow} "
+  print -Pn "\e]0;%~\a"   # titre de la fenêtre = dossier courant
+}
+zmodload zsh/datetime
+add-zsh-hook preexec _fk_preexec
+add-zsh-hook precmd _fk_precmd
+fi
+
+# ---- Animation du terminal (Studio, onglet Terminal) ----
+# « boucle » : elle tourne dans le panneau du haut de kitty (~/.config/kitty/forsaken.session).
+# « lancement » / « fixe » : affichée ici, au-dessus du premier prompt, si le shell est lancé par le terminal.
+if [[ $ST_BANNER == (lancement|fixe) && -o interactive && $TERM != linux \
+      && $(</proc/$PPID/comm) != (zsh|bash|sh|fish|sudo|su) ]]; then
+  print
+  ~/.local/bin/forsaken-banner --mode $ST_BANNER
+fi

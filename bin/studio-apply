@@ -1,0 +1,7 @@
+#!/bin/sh
+exec python3 -c '
+import os, sys; sys.path.insert(0, os.path.expanduser("~/.local/share/studio")); import core
+from i18n import tr
+c = core.load(); core.save(c)
+done = core.apply(c)
+print(tr("appliqué :"), ", ".join(tr(x) for x in done) if done else tr("rien de changé"))'

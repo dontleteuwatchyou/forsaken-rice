@@ -1,0 +1,55 @@
+# Prompt starship « forsaken » — modèle : ~/.zshrc remplace @ACCENT@, @ACCENT2@, @TEXT3@, @DANGER@, @WARN@, @IN@
+# par les couleurs de Studio (~/.config/studio/term.zsh) et écrit le résultat dans ~/.cache/starship.toml.
+add_newline = false
+format = """
+[╭─](fg:@TEXT3@)[\U000F11EA ](fg:@ACCENT@)$username[@IN@ ](fg:@TEXT3@)$hostname$directory$git_branch$git_status$python$cmd_duration
+[╰─](fg:@TEXT3@)$status$character"""
+
+[username]
+show_always = true
+style_user = "bold fg:@ACCENT2@"
+style_root = "bold fg:@DANGER@"
+format = "[$user]($style) "
+
+[hostname]
+ssh_only = true
+style = "fg:@WARN@"
+format = "[$hostname]($style) "
+
+[directory]
+style = "bold fg:@ACCENT@"
+truncation_length = 99
+truncate_to_repo = false
+read_only = " 󰌾"
+format = "[$path]($style)[$read_only]($read_only_style)"
+
+[git_branch]
+style = "fg:@ACCENT2@"
+format = " [\U000F062C $branch]($style)"
+
+[git_status]
+style = "fg:@ACCENT2@"
+modified = "●"
+staged = "+"
+format = "[( $modified$staged)]($style)"
+
+[python]
+style = "fg:@WARN@"
+detect_extensions = []
+detect_files = []
+detect_folders = []
+format = " [\U000F0320 $virtualenv]($style)"
+
+[cmd_duration]
+min_time = 3000
+style = "fg:@TEXT3@"
+format = " [\U000F0954 $duration]($style)"
+
+[status]
+disabled = false
+style = "fg:@DANGER@"
+format = "[✘ $status ]($style)"
+
+[character]
+success_symbol = "[\U000F0BCA ❯](fg:@ACCENT@)"
+error_symbol = "[❯](fg:@DANGER@)"
