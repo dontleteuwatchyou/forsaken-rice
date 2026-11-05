@@ -57,7 +57,7 @@ DEFAULT_BINDS = [
     {"keys": "SUPER + C",         "action": "close"},
     {"keys": "SUPER + D",         "action": "exec", "arg": "wofi --show drun", "label": "Lanceur d'applis"},
     {"keys": "SUPER + R",         "action": "exec", "arg": "wofi --show drun", "label": "Lanceur d'applis"},
-    {"keys": "SUPER + E",         "action": "exec", "arg": "nautilus", "label": "Fichiers"},
+    {"keys": "SUPER + E",         "action": "exec", "arg": "studio-fichiers", "label": "Fichiers"},
     {"keys": "SUPER + B",         "action": "exec", "arg": "firefox", "label": "Navigateur"},
     {"keys": "SUPER + SHIFT + V", "action": "float"},
     {"keys": "SUPER + V",         "action": "exec", "arg": _S + "studio-clip", "label": "Historique du presse-papiers"},
@@ -111,6 +111,12 @@ DEFAULTS = {
     "sunset": {"enabled": False, "temp": 4500, "start": "21:00", "end": "07:00"},
     "autostart": [],          # commandes perso lancées à l'ouverture de session
     "lang": "fr",             # fr, en, ru, es : tous les textes du rice
+    "files": {
+        "view": "list",        # "list" ou "grid"
+        "show_hidden": False,  # afficher les fichiers cachés par défaut
+        "single_click": False, # simple clic pour ouvrir
+        "terminal": "kitty",   # émulateur de terminal pour « Ouvrir un terminal ici »
+    },
     "term": {
         "anim": "toile",      # animation du terminal (voir TERM_ANIMS)
         "mode": "boucle",     # boucle = panneau animé en haut de kitty ; lancement ; fixe ; aucune
@@ -872,6 +878,103 @@ def restart_waybar():
     _run("env", "GDK_BACKEND=wayland", "waybar")
 
 
+def gen_gtk4_css(cfg, p):
+    """CSS libadwaita pour GTK4 — même palette que Studio."""
+    return (
+        "@define-color accent_bg_color {accent};\n"
+        "@define-color accent_color {accent_l};\n"
+        "@define-color accent_fg_color {on_accent};\n"
+        "@define-color window_bg_color {bg};\n"
+        "@define-color window_fg_color {text};\n"
+        "@define-color view_bg_color {bg};\n"
+        "@define-color view_fg_color {text};\n"
+        "@define-color headerbar_bg_color {bg};\n"
+        "@define-color headerbar_fg_color {text};\n"
+        "@define-color sidebar_bg_color {surface};\n"
+        "@define-color sidebar_fg_color {text};\n"
+        "@define-color card_bg_color {elevated};\n"
+        "@define-color card_fg_color {text};\n"
+        "@define-color popover_bg_color {elevated};\n"
+        "@define-color popover_fg_color {text};\n"
+        "@define-color dialog_bg_color {elevated};\n"
+        "@define-color dialog_fg_color {text};\n"
+        ":root {{\n"
+        "  --accent-bg-color: {accent};\n"
+        "  --accent-color: {accent_l};\n"
+        "  --accent-fg-color: {on_accent};\n"
+        "  --window-bg-color: {bg};\n"
+        "  --window-fg-color: {text};\n"
+        "  --view-bg-color: {bg};\n"
+        "  --headerbar-bg-color: {bg};\n"
+        "  --sidebar-bg-color: {surface};\n"
+        "  --card-bg-color: {elevated};\n"
+        "  --popover-bg-color: {elevated};\n"
+        "  --dialog-bg-color: {elevated};\n"
+        "}}\n"
+    ).format(
+        accent=p['accent'],
+        accent_l=mix(p['accent'], '#ffffff', 0.15),
+        on_accent=p['on_accent'],
+        bg=p['bg'], surface=p['surface'], elevated=p['elevated'],
+        text=p['text'],
+    )
+
+
+def gen_gtk3_css(p):
+    """CSS GTK3 pour le portail XDG file chooser — même palette que Studio."""
+    a, bg, sf, el = p['accent'], p['bg'], p['surface'], p['elevated']
+    t, t2, t3, oa = p['text'], p['text2'], p['text3'], p['on_accent']
+    # GTK3 alpha() only accepts @named colors — use rgba() for transparency
+    t_01  = css_rgba(t, 0.10)
+    t_007 = css_rgba(t, 0.07)
+    t_008 = css_rgba(t, 0.08)
+    t_012 = css_rgba(t, 0.12)
+    t_02  = css_rgba(t, 0.20)
+    t_035 = css_rgba(t, 0.35)
+    a_018 = css_rgba(a, 0.18)
+    a_022 = css_rgba(a, 0.22)
+    return (
+        f"@define-color theme_bg_color {bg};\n"
+        f"@define-color theme_fg_color {t};\n"
+        f"@define-color theme_base_color {sf};\n"
+        f"@define-color theme_text_color {t};\n"
+        f"@define-color theme_selected_bg_color {a};\n"
+        f"@define-color theme_selected_fg_color {oa};\n"
+        f"@define-color insensitive_bg_color {el};\n"
+        f"@define-color insensitive_fg_color {t2};\n"
+        f"\nwindow,.background{{background-color:{bg};color:{t};}}\n"
+        f"headerbar,.titlebar,.header-bar{{"
+        f"background-color:{bg} !important;background-image:none !important;"
+        f"color:{t} !important;border-bottom-color:{t_01};box-shadow:none !important;}}\n"
+        f"headerbar button,.titlebar button,.header-bar button{{"
+        f"background-color:{el} !important;background-image:none !important;"
+        f"color:{t};border-color:{t_012};border-radius:6px;}}\n"
+        f"headerbar button:hover,.header-bar button:hover{{background-color:{t_01} !important;}}\n"
+        f"placessidebar,placessidebar>viewport.frame{{background-color:{sf};"
+        f"color:{t};border-right-color:{t_008};}}\n"
+        f"placessidebar row{{color:{t2};border-radius:6px;padding:2px 4px;}}\n"
+        f"placessidebar row:selected,placessidebar row:active{{"
+        f"background-color:{a_018};color:{t};}}\n"
+        f"placessidebar row:hover{{background-color:{t_007};}}\n"
+        f"placessidebar .sidebar-section-header{{color:{t3};"
+        f"font-size:0.75em;font-weight:bold;padding:8px 12px 2px;}}\n"
+        f".view,treeview,iconview{{background-color:{bg};color:{t};}}\n"
+        f".view:selected,treeview:selected,iconview:selected{{"
+        f"background-color:{a_022};color:{t};}}\n"
+        f"treeview header button{{background-color:{sf};color:{t2};"
+        f"border-color:{t_01};}}\n"
+        f"entry{{background-color:{el};color:{t};"
+        f"border-color:{t_02};border-radius:6px;}}\n"
+        f"entry:focus{{border-color:{a};}}\n"
+        f"button.suggested-action{{background-color:{a};color:{oa};"
+        f"border-color:{a};}}\n"
+        f"separator{{background-color:{t_008};}}\n"
+        f"scrollbar slider{{background-color:{t_02};border-radius:10px;"
+        f"min-width:6px;min-height:6px;}}\n"
+        f"scrollbar slider:hover{{background-color:{t_035};}}\n"
+    )
+
+
 def apply(cfg):
     """Écrit tous les fichiers et recharge ce qui a changé. Retourne la liste des cibles touchées."""
     p = palette(cfg)
@@ -924,7 +1027,7 @@ def apply(cfg):
     if _write(CONF / "hypr" / "hyprlock.conf", gen_hyprlock(cfg, p)):
         changed.append("hyprlock")
 
-    if _write(CONF / "hypr" / "hypridle.conf", gen_hypridle(cfg)):
+    if _write(CONF / "hypr" / "hypridle.conf", gen_hypridle(cfg)) or not _running("hypridle"):
         changed.append("hypridle")
         subprocess.run(["pkill", "-x", "hypridle"])
         _run("hypridle")
@@ -937,4 +1040,20 @@ def apply(cfg):
         subprocess.run(["pkill", "-x", "hyprpaper"])
         if current_wall(cfg):
             _run("hyprpaper")
+
+    gtk4_dir = HOME / ".config" / "gtk-4.0"
+    gtk4_dir.mkdir(parents=True, exist_ok=True)
+    if _write(gtk4_dir / "gtk.css", gen_gtk4_css(cfg, p)):
+        changed.append("gtk4")
+        subprocess.run(["gsettings", "set", "org.gnome.desktop.interface",
+                        "color-scheme", "prefer-dark"],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    gtk3_dir = HOME / ".config" / "gtk-3.0"
+    gtk3_dir.mkdir(parents=True, exist_ok=True)
+    if _write(gtk3_dir / "gtk.css", gen_gtk3_css(p)):
+        changed.append("gtk3")
+        subprocess.run(["systemctl", "--user", "restart", "xdg-desktop-portal-gtk"],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
     return changed

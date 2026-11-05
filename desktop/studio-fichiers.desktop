@@ -1,0 +1,17 @@
+[Desktop Entry]
+Type=Application
+Name=Fichiers
+Name[en]=Files
+Name[ru]=Файлы
+Name[es]=Archivos
+Comment=Gestionnaire de fichiers du rice Hyprland
+Comment[en]=Hyprland rice file manager
+Comment[ru]=Файловый менеджер рабочего стола Hyprland
+Comment[es]=Gestor de archivos del rice Hyprland
+Icon=system-file-manager
+Exec=studio-fichiers %u
+Terminal=false
+Categories=System;FileManager;
+MimeType=inode/directory;
+StartupNotify=true
+StartupWMClass=fr.forsaken.Fichiers

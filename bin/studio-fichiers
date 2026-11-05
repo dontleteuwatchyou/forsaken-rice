@@ -1,0 +1,9 @@
+#!/usr/bin/env python3
+"""Lanceur du gestionnaire de fichiers du rice."""
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path.home() / ".local" / "share" / "studio"))
+from fichiers import Fichiers
+
+sys.exit(Fichiers().run(sys.argv))

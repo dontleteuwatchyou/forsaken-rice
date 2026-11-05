@@ -636,4 +636,112 @@ TR = {
     "Presse-papiers vide": ("Clipboard is empty", "Буфер обмена пуст", "Portapapeles vacío"),
     "Historique du presse-papiers vidé": ("Clipboard history cleared", "История буфера обмена очищена",
                                           "Historial del portapapeles borrado"),
+
+    # ------------------------------------------------------------ gestionnaire de fichiers
+    "Fichiers": ("Files", "Файлы", "Archivos"),
+    "Accueil": ("Home", "Домашняя папка", "Inicio"),
+    "Bureau": ("Desktop", "Рабочий стол", "Escritorio"),
+    "Documents": ("Documents", "Документы", "Documentos"),
+    "Téléchargements": ("Downloads", "Загрузки", "Descargas"),
+    "Images": ("Pictures", "Изображения", "Imágenes"),
+    "Musique": ("Music", "Музыка", "Música"),
+    "Vidéos": ("Videos", "Видео", "Vídeos"),
+    "Dossier": ("Folder", "Папка", "Carpeta"),
+    "Dossiers": ("Folders", "Папки", "Carpetas"),
+    "Appareils": ("Devices", "Устройства", "Dispositivos"),
+    "Dossier vide": ("Empty folder", "Пустая папка", "Carpeta vacía"),
+    "Pas de fichiers visibles ici": ("No visible files here", "Нет видимых файлов", "No hay archivos visibles aquí"),
+
+    # navigation / barres
+    "Précédent": ("Back", "Назад", "Atrás"),
+    "Suivant": ("Forward", "Вперёд", "Adelante"),
+    "Dossier parent": ("Parent folder", "Родительская папка", "Carpeta padre"),
+    "Chercher…": ("Search…", "Поиск…", "Buscar…"),
+    "Vue liste": ("List view", "Список", "Vista lista"),
+    "Vue grille": ("Grid view", "Плитки", "Vista cuadrícula"),
+    "Nouvel onglet": ("New tab", "Новая вкладка", "Nueva pestaña"),
+    "Fermer l'onglet": ("Close tab", "Закрыть вкладку", "Cerrar pestaña"),
+    "{n} éléments": ("{n} items", "{n} элементов", "{n} elementos"),
+    "{n} éléments ({t} en tout)": ("{n} items ({t} total)", "{n} элементов ({t} всего)", "{n} elementos ({t} en total)"),
+    "{n} sélectionné(s)": ("{n} selected", "{n} выбрано", "{n} seleccionado(s)"),
+
+    # colonnes
+    "Nom": ("Name", "Имя", "Nombre"),
+    "Taille": ("Size", "Размер", "Tamaño"),
+    "Modifié": ("Modified", "Изменён", "Modificado"),
+    "Type": ("Type", "Тип", "Tipo"),
+
+    # opérations
+    "Nouveau dossier": ("New folder", "Новая папка", "Nueva carpeta"),
+    "Dossier sans nom": ("Unnamed folder", "Папка без имени", "Carpeta sin nombre"),
+    "Nom du dossier": ("Folder name", "Имя папки", "Nombre de carpeta"),
+    "Créer": ("Create", "Создать", "Crear"),
+    "Renommer": ("Rename", "Переименовать", "Renombrar"),
+    "Nouveau nom": ("New name", "Новое имя", "Nuevo nombre"),
+    "Copier": ("Copy", "Копировать", "Copiar"),
+    "Couper": ("Cut", "Вырезать", "Cortar"),
+    "Coller": ("Paste", "Вставить", "Pegar"),
+    "Ouvrir": ("Open", "Открыть", "Abrir"),
+    "Ouvrir dans un nouvel onglet": ("Open in new tab", "Открыть в новой вкладке", "Abrir en nueva pestaña"),
+    "Ouvrir avec…": ("Open with…", "Открыть с помощью…", "Abrir con…"),
+    "Ouvrir avec": ("Open with", "Открыть с помощью", "Abrir con"),
+    "Ouvrir un terminal ici": ("Open terminal here", "Открыть терминал здесь", "Abrir terminal aquí"),
+    "Tout sélectionner": ("Select all", "Выбрать всё", "Seleccionar todo"),
+    "Mettre à la corbeille": ("Move to trash", "В корзину", "Mover a la papelera"),
+    'Mettre « {nom} » à la corbeille ?': ('Move "{nom}" to trash?', "Переместить «{nom}» в корзину?", "¿Mover «{nom}» a la papelera?"),
+    "Mettre {n} éléments à la corbeille ?": ("Move {n} items to trash?", "Переместить {n} элементов в корзину?", "¿Mover {n} elementos a la papelera?"),
+    "Les fichiers seront déplacés vers la corbeille.": (
+        "The files will be moved to the trash.",
+        "Файлы будут перемещены в корзину.",
+        "Los archivos serán movidos a la papelera."),
+    "Annuler": ("Cancel", "Отмена", "Cancelar"),
+    "Impossible de renommer": ("Cannot rename", "Невозможно переименовать", "No se puede renombrar"),
+    "Impossible de créer": ("Cannot create", "Невозможно создать", "No se puede crear"),
+    "Erreur de copie": ("Copy error", "Ошибка копирования", "Error de copia"),
+    "Erreur": ("Error", "Ошибка", "Error"),
+    "Accès refusé": ("Access denied", "Доступ запрещён", "Acceso denegado"),
+
+    # dialogue de propriétés
+    "Propriétés": ("Properties", "Свойства", "Propiedades"),
+    "Emplacement": ("Location", "Расположение", "Ubicación"),
+    "Taille totale": ("Total size", "Общий размер", "Tamaño total"),
+    "Éléments": ("Items", "Элементы", "Elementos"),
+    "Modifié le": ("Modified on", "Изменён", "Modificado el"),
+    "Permissions": ("Permissions", "Права доступа", "Permisos"),
+
+    # dialogue de progression
+    "Copie en cours…": ("Copying…", "Копирование…", "Copiando…"),
+    "Déplacement en cours…": ("Moving…", "Перемещение…", "Moviendo…"),
+
+    # page Studio
+    "Gestionnaire de fichiers": ("File manager", "Файловый менеджер", "Gestor de archivos"),
+    "Vue par défaut": ("Default view", "Вид по умолчанию", "Vista predeterminada"),
+    "Liste": ("List", "Список", "Lista"),
+    "Grille": ("Grid", "Плитки", "Cuadrícula"),
+    "Fichiers cachés visibles": ("Show hidden files", "Показывать скрытые файлы", "Mostrar archivos ocultos"),
+    "Ouvrir en un seul clic": ("Open with single click", "Открывать одним кликом", "Abrir con un solo clic"),
+    "Émulateur de terminal": ("Terminal emulator", "Эмулятор терминала", "Emulador de terminal"),
+    "Actions rapides": ("Quick actions", "Быстрые действия", "Acciones rápidas"),
+    "Ouvrir le gestionnaire": ("Open file manager", "Открыть файловый менеджер", "Abrir el gestor de archivos"),
+
+    # suppression définitive (Shift+Suppr)
+    'Supprimer définitivement « {nom} » ?': ('Permanently delete "{nom}"?', 'Удалить «{nom}» навсегда?', '¿Eliminar permanentemente «{nom}»?'),
+    "Supprimer définitivement {n} éléments ?": ("Permanently delete {n} items?", "Навсегда удалить {n} élémens?", "¿Eliminar permanentemente {n} elementos?"),
+    "Cette action est irréversible. Les fichiers ne seront pas dans la corbeille.": (
+        "This action cannot be undone. Files will not go to the trash.",
+        "Это действие необратимо. Файлы не попадут в корзину.",
+        "Esta acción es irreversible. Los archivos no irán a la papelera.",
+    ),
+    "Supprimer définitivement": ("Delete permanently", "Удалить навсегда", "Eliminar permanentemente"),
+
+    # archivage
+    "Compresser…": ("Compress…", "Сжать…", "Comprimir…"),
+    "Extraire ici": ("Extract here", "Извлечь здесь", "Extraer aquí"),
+    "Compression en cours…": ("Compressing…", "Сжатие…", "Comprimiendo…"),
+    "Extraction en cours…": ("Extracting…", "Извлечение…", "Extrayendo…"),
+    "Nom de l'archive": ("Archive name", "Имя архива", "Nombre del archivo"),
+    "Format": ("Format", "Формат", "Formato"),
+    "Format non supporté": ("Unsupported format", "Неподдерживаемый формат", "Formato no soportado"),
+    "Erreur d'extraction": ("Extraction error", "Ошибка извлечения", "Error de extracción"),
+    "Archive": ("Archive", "Архив", "Archivo"),
 }

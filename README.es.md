@@ -9,6 +9,7 @@ Un escritorio Hyprland que se configura por completo desde una sola aplicación,
 ## Qué incluye
 
 - **Studio** (Super+Mayús+C): una aplicación GTK4 / libadwaita que genera toda la configuración a partir de un único archivo (`~/.config/studio/studio.json`). 8 temas listos, tus propios colores o los del fondo de pantalla.
+- **Archivos** (Super+E): un gestor de archivos nativo GTK4 con los colores del tema. Vista de lista o cuadrícula, barra lateral, copiar/cortar/pegar, papelera, renombrar, propiedades, búsqueda, y compresión/extracción de archivos (zip, tar.gz, tar.xz…). Menú contextual completo, atajos de teclado y ordenación por nombre, tamaño, tipo o fecha.
 - **Barra waybar** en 6 estilos, con memoria, procesador, tarjeta gráfica, disco, sonido, red, portapapeles, capturas, «no molestar» y bots.
 - **Terminal kitty animado**: 13 animaciones (telaraña, lluvia de código, fuego, cielo nocturno, murciélagos, cuervo, tormenta, acuario, visualizador de audio, juego de la vida, logo de Arch en 3D, nieve, serpiente) con los colores del tema.
   - En bucle en un panel arriba, solo al abrir, como imagen fija o desactivado.
@@ -42,6 +43,7 @@ Después vuelve a entrar en Hyprland. El teclado es AZERTY por defecto: se cambi
 | Super + Intro | Terminal |
 | Super + D | Lanzador de aplicaciones |
 | Super + Mayús + C | Studio |
+| Super + E | Archivos |
 | Super + V | Historial del portapapeles |
 | Super + Mayús + S / Impr Pant | Captura de una zona |
 | Super + X | Menú de sesión |
@@ -54,11 +56,12 @@ Todos los atajos se modifican en Studio, pestaña «Atajos».
 
 | En el repositorio | Se instala en | Qué es |
 |---|---|---|
-| `studio/` | `~/.local/share/studio/` | la aplicación Studio, el motor de temas, las animaciones, las traducciones |
-| `bin/` | `~/.local/bin/` | los comandos (`studio`, `studio-apply`, `forsaken-banner`…) |
+| `studio/` | `~/.local/share/studio/` | la aplicación Studio, el gestor de archivos, el motor de temas, las animaciones, las traducciones |
+| `bin/` | `~/.local/bin/` | los comandos (`studio`, `studio-fichiers`, `studio-apply`, `forsaken-banner`…) |
+| `desktop/` | `~/.local/share/applications/` | archivos `.desktop` (Archivos aparece en los lanzadores) |
 | `config/hypr/hyprland.lua` | `~/.config/hypr/` | la configuración básica de Hyprland (el resto lo genera Studio) |
 | `config/kitty/kitty.conf` | `~/.config/kitty/` | incluye `studio.conf`, generado por Studio |
 | `config/starship.toml` | `~/.config/` | la plantilla del prompt |
 | `config/zsh/zshrc` | `~/.zshrc` | historial, autocompletado, plugins, prompt, animación |
 
-Para añadir una animación: una clase en `studio/animations.py` (con su lista `OPTIONS`). Aparece sola en Studio. Para añadir un idioma o un texto: `studio/traductions.py`.
+Para añadir una animación: una clase en `studio/animations.py` (con su lista `OPTIONS`). Aparece sola en Studio. Para añadir un idioma o un texto: `studio/traductions.py`. Para añadir un formato de archivo: la constante `ARCHIVE_EXT` en `studio/fichiers.py`.

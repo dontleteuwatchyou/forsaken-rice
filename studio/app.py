@@ -87,6 +87,7 @@ class Studio(Adw.Application, SystemPages):
             ("Outils", [
                 ("bots", "Bots", "application-x-executable-symbolic", self.page_bots),
                 ("ram", "Mémoire", "drive-harddisk-solidstate-symbolic", self.page_ram),
+                ("fichiers", "Fichiers", "system-file-manager-symbolic", self.page_fichiers),
             ]),
         ]
         self.nav = Gtk.ListBox(css_classes=["navigation-sidebar"])
@@ -1010,6 +1011,38 @@ class Studio(Adw.Application, SystemPages):
         elif page == "ram":
             self.refresh_ram()
         return True
+
+    # ------------------------------------------------------------ page Fichiers
+    def page_fichiers(self):
+        page = Adw.PreferencesPage()
+
+        g = Adw.PreferencesGroup(title=tr("Gestionnaire de fichiers"))
+        self.combo(g, "Vue par défaut", ["files", "view"], {
+            "list": tr("Liste"),
+            "grid": tr("Grille"),
+        })
+        self.switch(g, "Fichiers cachés visibles", ["files", "show_hidden"])
+        self.switch(g, "Ouvrir en un seul clic", ["files", "single_click"])
+        page.add(g)
+
+        g2 = Adw.PreferencesGroup(title=tr("Terminal"))
+        terminals = {"kitty": "Kitty", "alacritty": "Alacritty", "foot": "Foot",
+                     "wezterm": "WezTerm", "ghostty": "Ghostty"}
+        self.combo(g2, "Émulateur de terminal", ["files", "terminal"], terminals)
+        page.add(g2)
+
+        g3 = Adw.PreferencesGroup(title=tr("Actions rapides"))
+        open_row = Adw.ActionRow(title=tr("Ouvrir le gestionnaire"), activatable=True)
+        open_row.add_suffix(Gtk.Image(icon_name="go-next-symbolic"))
+        open_row.connect("activated", lambda _: self._launch_fichiers())
+        g3.add(open_row)
+        page.add(g3)
+
+        return page
+
+    def _launch_fichiers(self):
+        import subprocess
+        subprocess.Popen(["studio-fichiers"], start_new_session=True)
 
 
 if __name__ == "__main__":

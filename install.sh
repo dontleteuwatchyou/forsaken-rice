@@ -45,7 +45,7 @@ PAQUETS=(hyprland hyprpaper hypridle hyprlock waybar wofi mako kitty zsh starshi
          zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search
          python python-gobject gtk4 libadwaita python-pillow python-numpy python-psutil
          wl-clipboard cliphist grim slurp libnotify libpulse wireplumber xdg-user-dirs
-         ttf-jetbrains-mono-nerd noto-fonts-cjk)
+         xdg-desktop-portal-gtk ttf-jetbrains-mono-nerd noto-fonts-cjk)
 OPTIONNELS=(cava hyprsunset zoxide pavucontrol)
 if (( DEPS )); then
   if command -v pacman >/dev/null; then
@@ -72,9 +72,11 @@ echo "$(t backup) $SAUVE"
 
 # ---- copie ----
 t copy
-mkdir -p ~/.local/share/studio ~/.local/bin ~/.config/hypr ~/.config/kitty ~/.config/studio
+mkdir -p ~/.local/share/studio ~/.local/bin ~/.config/hypr ~/.config/kitty ~/.config/studio ~/.local/share/applications
 cp studio/*.py ~/.local/share/studio/
 install -m 755 bin/* ~/.local/bin/
+cp desktop/*.desktop ~/.local/share/applications/
+command -v update-desktop-database >/dev/null && update-desktop-database ~/.local/share/applications/ || true
 cp config/hypr/hyprland.lua ~/.config/hypr/
 cp config/kitty/kitty.conf ~/.config/kitty/
 cp config/starship.toml ~/.config/starship.toml
