@@ -9,7 +9,7 @@ Un bureau Hyprland qui se règle entièrement depuis une appli, **Studio** : cou
 ## Ce qu'il y a dedans
 
 - **Studio** (Super+Maj+C) : une appli GTK4 / libadwaita qui génère toute la config à partir d'un seul fichier (`~/.config/studio/studio.json`). 8 thèmes prêts, ou tes couleurs, ou celles du fond d'écran.
-- **Fichiers** (Super+E) : un gestionnaire de fichiers natif GTK4, aux couleurs du thème. Vue liste ou grille, barre latérale, copier/couper/coller, corbeille, renommage, propriétés, recherche, et compression/décompression d'archives (zip, tar.gz, tar.xz…). Clic droit complet, raccourcis clavier, et tri par nom, taille, type ou date.
+- **Nautilus** (Super+E) : le gestionnaire de fichiers GNOME, aux couleurs du thème. Vue, clic, fichiers cachés et tri se règlent dans Studio ; les couleurs suivent le thème automatiquement.
 - **Barre waybar** en 6 styles, avec mémoire, processeur, carte graphique, disque, son, réseau, presse-papiers, captures, « ne pas déranger » et bots.
 - **Terminal kitty animé** : 13 animations (toile d'araignée, pluie de code, feu, ciel nocturne, chauves-souris, corbeau, orage, aquarium, visualiseur audio, jeu de la vie, logo d'Arch en 3D, neige, serpent), aux couleurs du thème.
   - En boucle dans un panneau en haut, seulement à l'ouverture, en image fixe, ou rien.
@@ -56,12 +56,11 @@ Tous les raccourcis se modifient dans Studio, onglet « Raccourcis ».
 
 | Dans le dépôt | Installé dans | Rôle |
 |---|---|---|
-| `studio/` | `~/.local/share/studio/` | l'appli Studio, le gestionnaire de fichiers, le moteur de thème, les animations, les traductions |
-| `bin/` | `~/.local/bin/` | les commandes (`studio`, `studio-fichiers`, `studio-apply`, `forsaken-banner`…) |
-| `desktop/` | `~/.local/share/applications/` | les fichiers `.desktop` (Fichiers apparaît dans les lanceurs) |
+| `studio/` | `~/.local/share/studio/` | l'appli Studio, le moteur de thème, les animations, les traductions |
+| `bin/` | `~/.local/bin/` | les commandes (`studio`, `studio-apply`, `forsaken-banner`…) |
 | `config/hypr/hyprland.lua` | `~/.config/hypr/` | la config Hyprland de base (le reste est généré par Studio) |
 | `config/kitty/kitty.conf` | `~/.config/kitty/` | inclut `studio.conf`, généré par Studio |
 | `config/starship.toml` | `~/.config/` | le modèle du prompt |
 | `config/zsh/zshrc` | `~/.zshrc` | historique, complétion, plugins, prompt, animation |
 
-Pour ajouter une animation : une classe dans `studio/animations.py` (avec sa liste `OPTIONS`). Elle apparaît toute seule dans Studio. Pour ajouter une langue ou un texte : `studio/traductions.py`. Pour ajouter un format d'archive : la constante `ARCHIVE_EXT` dans `studio/fichiers.py`.
+Pour ajouter une animation : une classe dans `studio/animations.py` (avec sa liste `OPTIONS`). Elle apparaît toute seule dans Studio. Pour ajouter une langue ou un texte : `studio/traductions.py`.

@@ -983,10 +983,9 @@ class Studio(Adw.Application, SystemPages):
         self.ram_rows = []
         for a in ram.apps(10):
             row = Adw.ActionRow(title=a["name"], subtitle=tr("{taille} · {n} processus", taille=bots.human(a["mem"]),
-                                                             n=len(a["pids"])))
-            b = Gtk.Button(label=tr("Fermer"), valign=Gtk.Align.CENTER, css_classes=["flat"])
-            b.connect("clicked", lambda _b, app=a: self.close_app(app))
-            row.add_suffix(b)
+                                                             n=len(a["pids"])), activatable=True)
+            row.connect("activated", lambda _r, app=a: self.close_app(app))
+            row.add_suffix(Gtk.Image(icon_name="go-next-symbolic", css_classes=["dim-label"]))
             self.ram_group.add(row)
             self.ram_rows.append(row)
 
@@ -1016,33 +1015,31 @@ class Studio(Adw.Application, SystemPages):
     def page_fichiers(self):
         page = Adw.PreferencesPage()
 
-        g = Adw.PreferencesGroup(title=tr("Gestionnaire de fichiers"))
+        g = Adw.PreferencesGroup(title=tr("Gestionnaire de fichiers"),
+                                 description="Nautilus — Super+E")
         self.combo(g, "Vue par défaut", ["files", "view"], {
             "list": tr("Liste"),
-            "grid": tr("Grille"),
+            "icon": tr("Icônes"),
         })
         self.switch(g, "Fichiers cachés visibles", ["files", "show_hidden"])
         self.switch(g, "Ouvrir en un seul clic", ["files", "single_click"])
-        page.add(g)
-
-        g2 = Adw.PreferencesGroup(title=tr("Terminal"))
-        terminals = {"kitty": "Kitty", "alacritty": "Alacritty", "foot": "Foot",
-                     "wezterm": "WezTerm", "ghostty": "Ghostty"}
-        self.combo(g2, "Émulateur de terminal", ["files", "terminal"], terminals)
-        page.add(g2)
-
-        g3 = Adw.PreferencesGroup(title=tr("Actions rapides"))
-        open_row = Adw.ActionRow(title=tr("Ouvrir le gestionnaire"), activatable=True)
+        self.combo(g, "Trier par", ["files", "sort"], {
+            "name":  tr("Nom"),
+            "size":  tr("Taille"),
+            "type":  tr("Type"),
+            "mtime": tr("Date"),
+        })
+        open_row = Adw.ActionRow(title=tr("Ouvrir Nautilus"), activatable=True)
         open_row.add_suffix(Gtk.Image(icon_name="go-next-symbolic"))
         open_row.connect("activated", lambda _: self._launch_fichiers())
-        g3.add(open_row)
-        page.add(g3)
+        g.add(open_row)
+        page.add(g)
 
         return page
 
     def _launch_fichiers(self):
         import subprocess
-        subprocess.Popen(["studio-fichiers"], start_new_session=True)
+        subprocess.Popen(["nautilus"], start_new_session=True)
 
 
 if __name__ == "__main__":

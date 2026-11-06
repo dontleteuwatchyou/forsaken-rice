@@ -57,7 +57,7 @@ DEFAULT_BINDS = [
     {"keys": "SUPER + C",         "action": "close"},
     {"keys": "SUPER + D",         "action": "exec", "arg": "wofi --show drun", "label": "Lanceur d'applis"},
     {"keys": "SUPER + R",         "action": "exec", "arg": "wofi --show drun", "label": "Lanceur d'applis"},
-    {"keys": "SUPER + E",         "action": "exec", "arg": "studio-fichiers", "label": "Fichiers"},
+    {"keys": "SUPER + E",         "action": "exec", "arg": "nautilus", "label": "Fichiers"},
     {"keys": "SUPER + B",         "action": "exec", "arg": "firefox", "label": "Navigateur"},
     {"keys": "SUPER + SHIFT + V", "action": "float"},
     {"keys": "SUPER + V",         "action": "exec", "arg": _S + "studio-clip", "label": "Historique du presse-papiers"},
@@ -112,10 +112,10 @@ DEFAULTS = {
     "autostart": [],          # commandes perso lancées à l'ouverture de session
     "lang": "fr",             # fr, en, ru, es : tous les textes du rice
     "files": {
-        "view": "list",        # "list" ou "grid"
-        "show_hidden": False,  # afficher les fichiers cachés par défaut
-        "single_click": False, # simple clic pour ouvrir
-        "terminal": "kitty",   # émulateur de terminal pour « Ouvrir un terminal ici »
+        "view": "list",         # "list" ou "icon"
+        "show_hidden": False,   # afficher les fichiers cachés par défaut
+        "single_click": False,  # simple clic pour ouvrir
+        "sort": "name",         # name | size | type | mtime
     },
     "term": {
         "anim": "toile",      # animation du terminal (voir TERM_ANIMS)
@@ -1048,6 +1048,20 @@ def apply(cfg):
         subprocess.run(["gsettings", "set", "org.gnome.desktop.interface",
                         "color-scheme", "prefer-dark"],
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    # Nautilus : synchronise les préférences avec la config Studio
+    fc = cfg.get("files", {})
+    _gs = lambda s, k, v: subprocess.run(
+        ["gsettings", "set", s, k, v],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    _gs("org.gnome.nautilus.preferences", "default-folder-viewer",
+        "'list-view'" if fc.get("view", "list") == "list" else "'icon-view'")
+    _gs("org.gnome.nautilus.preferences", "click-policy",
+        "'single'" if fc.get("single_click") else "'double'")
+    _gs("org.gnome.nautilus.preferences", "show-hidden-files",
+        "true" if fc.get("show_hidden") else "false")
+    _gs("org.gnome.nautilus.preferences", "default-sort-order",
+        f"'{fc.get('sort', 'name')}'")
 
     gtk3_dir = HOME / ".config" / "gtk-3.0"
     gtk3_dir.mkdir(parents=True, exist_ok=True)
